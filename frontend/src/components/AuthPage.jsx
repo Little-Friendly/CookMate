@@ -1,14 +1,67 @@
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import api from '../axios-instance';
 
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { IoMdPerson } from "react-icons/io";
 import { PiChefHatBold } from "react-icons/pi";
 
-
-
 export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [alert, showAlert] = useState({ message: "", show: false });
+
+    const navigate = useNavigate();
+
+    const { register, handleSubmit, reset } = useForm({
+        defaultValues: { email: "", password: "", firstName: "", lastName: "", username: "" },
+    });
+
+    // LOGIN HANDLER
+    const loginUser = async (values) => {
+        try {
+            const response = await api.post('/auth/login', {
+                email: values.email,
+                password: values.password
+            });
+
+            // Store token and user data
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            
+            showAlert({ show: true, message: "Login successful!" });
+            navigate("/dashboard");
+        } catch (error) {
+            const errorMessage = error.response?.data?.error || "Login failed. Please try again.";
+            showAlert({ show: true, message: errorMessage });
+        }
+    };
+
+    // SIGNUP HANDLER
+    const signupUser = async (values) => {
+        try {
+            const response = await api.post('/auth/signup', {
+                email: values.email,
+                password: values.password,
+                firstName: values.firstName,
+                lastName: values.lastName,
+                username: values.username
+            });
+
+            // Store token and user data
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            
+            showAlert({ show: true, message: "Signup successful! Welcome to CookMate!" });
+            reset();
+            // Navigate to dashboard after successful signup
+            navigate("/dashboard");
+        } catch (error) {
+            const errorMessage = error.response?.data?.error || "Signup failed. Please try again.";
+            showAlert({ show: true, message: errorMessage });
+        }
+    };
 
     // Helper function that toggles password icon in form
     const togglePasswordVisibility = () => {
@@ -68,7 +121,7 @@ export default function AuthPage() {
                     </li>
                 </ul>
                 {/* Dummy stats could be imported using  (API) */}
-                <div className='flex justify-around'>
+            <div className='flex justify-around'>
                     <div className='flex flex-col space-y-1'>
                         <b className='text-2xl text-green-600'>50K+</b>
                         <p>Recipes</p>
@@ -86,7 +139,7 @@ export default function AuthPage() {
 
             {/* The right column */}
             <div className="w-[45%] min-w-[300px] px-8 py-20 flex items-center justify-center">
-                <form className="w-full max-w-md space-y-6 p-10 border-2 border-gray-800/30 rounded-sm text-center" autoComplete="on">
+                <div className="w-full max-w-md space-y-6 p-10 border-2 border-gray-800/30 rounded-sm text-center">
                     <div className='flex flex-col justify-center items-center text-center space-y-4'>
                         <div className="flex justify-center items-center p-5 w-20 h-20 rounded-full bg-amber-100 border border-gray-500/30">
                             <PiChefHatBold className="text-gray-900/50 text-3xl" />
@@ -96,78 +149,32 @@ export default function AuthPage() {
                             {isLogin ? 'Welcome Back!' : 'Join CookMate!'}
                         </h3>
                         <h4>
-                            {isLogin
-                                ? 'Sign in to continue your culinary journey'
-                                : 'Create an account and start cooking'}
+                            {isLogin ? (
+                                <LoginAlert alert={alert} showAlert={showAlert} />
+                            ): (
+                                <SignupAlert alert={alert} showAlert={showAlert} />
+                            )}
                         </h4>
                     </div>
 
-
-                    {/* Email Input */}
-                    <div className="relative">
-                        <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <input
-                            type="email"
-                            name="email"
-                            placeholder="Email"
-                            autoComplete="email"
-                            className="w-full pl-10 pr-3 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                    {/* Use the separate form components */}
+                    {isLogin ? (
+                        <LoginForm 
+                            handleSubmit={handleSubmit} 
+                            loginUser={loginUser} 
+                            register={register}
+                            showPassword={showPassword}
+                            togglePasswordVisibility={togglePasswordVisibility}
                         />
-                    </div>
-
-                    {/* Conditionally render username input only on signup */}
-                    {!isLogin && (
-                        <div className="relative">
-                            <IoMdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="text"
-                                name="username"
-                                placeholder="Username"
-                                autoComplete="username"
-                                className="w-full pl-10 pr-3 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
-                            />
-                        </div>
-                    )}
-
-                    {/* Password Input */}
-                    <div className="relative">
-                        <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <input
-                            type={showPassword ? "text" : "password"}
-                            name="password"
-                            placeholder="Password"
-                            autoComplete={isLogin ? "current-password" : "new-password"}
-                            className="w-full pl-10 pr-10 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                    ) : (
+                        <SignupForm 
+                            handleSubmit={handleSubmit} 
+                            signupUser={signupUser} 
+                            register={register}
+                            showPassword={showPassword}
+                            togglePasswordVisibility={togglePasswordVisibility}
                         />
-                        <button
-                            type="button"
-                            onClick={togglePasswordVisibility}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                            aria-label={showPassword ? "Hide password" : "Show password"}
-                        >
-                            {showPassword ? <FaEyeSlash /> : <FaEye />}
-                        </button>
-                    </div>
-
-                    {/* Remember Me Checkbox and Forgot Password (only on the login form) */}
-                    {isLogin && (
-                        <div className='flex justify-between items-center'>
-                            <label className="flex items-center gap-2">
-                                <input type="checkbox" name="remember" autoComplete="remember-me" className="w-4 h-4" />
-                                Remember me
-                            </label>
-                            <a href="/forgot-password" className="text-green-600 hover:underline cursor-pointer">
-                                Forgot Password?
-                            </a>
-                        </div>
                     )}
-
-                    <button
-                        type="submit"
-                        className="w-full py-3 bg-green-500 text-white rounded hover:bg-green-600 hover:scale-[1.05] transition cursor-pointer"
-                    >
-                        {isLogin ? 'Login' : 'Sign Up'}
-                    </button>
 
                     <span>
                         {isLogin ? "Don't have an account? " : "Already have an account? "}
@@ -175,8 +182,189 @@ export default function AuthPage() {
                             {isLogin ? "Sign up" : "Log in"}
                         </a>
                     </span>
-                </form>
+                </div>
             </div>
         </section>
+    );
+}
+
+function LoginForm({ handleSubmit, loginUser, register, showPassword, togglePasswordVisibility }) {
+    return (
+        <form className="space-y-6" onSubmit={handleSubmit(loginUser)} autoComplete="on">
+            {/* Email Input */}
+            <div className="relative">
+                <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                    type="email"
+                    placeholder="Email"
+                    autoComplete="email"
+                    className="w-full pl-10 pr-3 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                    {...register("email")}
+                />
+            </div>
+
+            {/* Password Input */}
+            <div className="relative">
+                <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    autoComplete="current-password"
+                    className="w-full pl-10 pr-10 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                    {...register("password")}
+                />
+                <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+            </div>
+
+            {/* Remember Me Checkbox and Forgot Password */}
+            <div className='flex justify-between items-center'>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" name="remember" autoComplete="remember-me" className="w-4 h-4" />
+                    Remember me
+                </label>
+                <a href="/forgot-password" className="text-green-600 hover:underline cursor-pointer">
+                    Forgot Password?
+                </a>
+            </div>
+
+            <button
+                type="submit"
+                className="w-full py-3 bg-green-500 text-black rounded hover:bg-green-600 hover:scale-[1.05] transition cursor-pointer"
+            >
+                Login
+            </button>
+        </form>
+    );
+}
+
+function SignupForm({ handleSubmit, signupUser, register, showPassword, togglePasswordVisibility }) {
+    return (
+        <form className="space-y-6" onSubmit={handleSubmit(signupUser)} autoComplete="on">
+            {/* Username Input */}
+            <div className="relative">
+                <IoMdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Username"
+                    autoComplete="username"
+                    className="w-full pl-10 pr-3 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                    {...register("username")}
+                />
+            </div>
+
+            {/* First Name Input */}
+            <div className="relative">
+                <IoMdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="First Name"
+                    autoComplete="given-name"
+                    className="w-full pl-10 pr-3 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                    {...register("firstName")}
+                />
+            </div>
+
+            {/* Last Name Input */}
+            <div className="relative">
+                <IoMdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Last Name"
+                    autoComplete="family-name"
+                    className="w-full pl-10 pr-3 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                    {...register("lastName")}
+                />
+            </div>
+
+            {/* Email Input */}
+            <div className="relative">
+                <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                    type="email"
+                    placeholder="Email"
+                    autoComplete="email"
+                    className="w-full pl-10 pr-3 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                    {...register("email")}
+                />
+            </div>
+
+            {/* Password Input */}
+            <div className="relative">
+                <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    autoComplete="new-password"
+                    className="w-full pl-10 pr-10 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                    {...register("password")}
+                />
+                <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+            </div>
+
+            <button
+                type="submit"
+                className="w-full py-3 bg-green-500 text-black rounded hover:bg-green-600 hover:scale-[1.05] transition cursor-pointer"
+            >
+                Sign Up
+            </button>
+        </form>
+    );
+}
+
+function LoginAlert({ alert, showAlert }) {
+    return (
+        <>
+            {alert.show && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                    <span className="block sm:inline">{alert.message}</span>
+                    <button
+                        onClick={() => showAlert({ message: "", show: false })}
+                        className="absolute top-0 bottom-0 right-0 px-4 py-3"
+                    >
+                        <span className="sr-only">Close</span>
+                        <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <title>Close</title>
+                            <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+                        </svg>
+                    </button>
+                </div>
+            )}
+        </>
+    );
+}
+
+function SignupAlert({ alert, showAlert }) {
+    return (
+        <>
+            {alert.show && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                    <span className="block sm:inline">{alert.message}</span>
+                    <button
+                        onClick={() => showAlert({ message: "", show: false })}
+                        className="absolute top-0 bottom-0 right-0 px-4 py-3"
+                    >
+                        <span className="sr-only">Close</span>
+                        <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <title>Close</title>
+                            <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+                        </svg>
+                    </button>
+                </div>
+            )}
+        </>
     );
 }

@@ -1,10 +1,32 @@
+import express from "express";
+import cors from "cors";
+import recipeRouter from "./routes/recipes.js";
+import chatRouter from "./routes/chatbot.js";
+import authRouter from "./routes/authentication.js";
+import verifyToken from "./middleware/auth.js";
+
+const app = express();
+const PORT = 8080;
+
+app.use(cors());
+app.use(express.json());
+
+app.use("/auth", authRouter);
+app.use("/recipes", recipeRouter);
+app.use("/chat", chatRouter);
+
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`)
+});
+
 /**
  * @file This is the main entry point for the Express backend server.
  * @description It sets up the core server functionalities, including middleware, API routing, and error handling, and starts the server.
  * @module server
  */
 
-import express from 'express';
+
+/*import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
@@ -49,7 +71,7 @@ app.use(cors());
  * @function
  * @memberof module:server
  */
-app.use('/api', routes);
+/*app.use('/api', routes);
 // app.use("/recipes", verifyToken, recipeRouter);
 // app.use("/chat", chatRouter);
 
@@ -73,7 +95,7 @@ app.use(errorHandler);
  * @param {object} res - Express response object.
  * @returns {object} A JSON object indicating the server's status and timestamp.
  */
-app.get('/health', (req, res) => {
+/*app.get('/health', (req, res) => {
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
@@ -82,15 +104,12 @@ app.get('/health', (req, res) => {
 
 
 
-// ==============================
-// START SERVER
-// ==============================
 
 /**
  * Starts the server and listens for incoming requests on the specified port.
  * @listens PORT
  */
-app.listen(PORT, () => {
+/*app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`⛑️  Health check endpoint http://localhost:${PORT}/health`);
     // console.log(`🔌 API endpoint http://localhost:${PORT}/api`);

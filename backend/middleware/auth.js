@@ -1,3 +1,32 @@
+// Import the `jsonwebtoken` module for verifying and creating JWTs
+import jwt from 'jsonwebtoken';
+
+// Middleware function to verify the JSON Web Token (JWT)
+const verifyToken = (req, res, next) => {
+  // Extract the token from the Authorization header (if it exists)
+  const token = req.headers.authorization?.split(' ')[1];
+
+  // If no token is provided, respond with a 401 Unauthorized status
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    // Verify the token using the secret stored in the environment variable
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+
+    // Attach the decoded token payload (user information) to the request object
+    req.user = decoded;
+
+    // Proceed to the next middleware or route handler
+    next();
+  } catch (err) {
+    // If token verification fails, respond with a 401 Unauthorized status
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+export default verifyToken;
 /**
  * @file This file contains various middleware functions for authentication and authorization.
  * @description These middleware functions handle token verification (for both required and optional authentication),
@@ -5,11 +34,11 @@
  * @module authMiddleware
  */
 
-import { verifyToken } from '../config/jwt.js';
+/*import { verifyToken } from '../config/jwt.js';
 import prisma from '../config/database.js';
 import { errorResponse } from '../utils/responseHelpers.js';
 
-/**
+*
  * Middleware to authenticate a user using a required JWT access token.
  * This function will halt the request with a 401 Unauthorized error if no valid token is provided.
  *
@@ -18,7 +47,7 @@ import { errorResponse } from '../utils/responseHelpers.js';
  * @param {function} next - The next middleware function in the stack.
  * @returns {void}
  */
-function authenticateToken(req, res, next) {
+/*function authenticateToken(req, res, next) {
     try {
         // Get the "Authorization" header from the request. It should be in the format "Bearer <token>".
         const authHeader = req.headers.authorization;
@@ -57,7 +86,7 @@ function authenticateToken(req, res, next) {
  * @param {function} next - The next middleware function in the stack.
  * @returns {void}
  */
-function optionalAuth(req, res, next) {
+/*function optionalAuth(req, res, next) {
     try {
         // Get the "Authorization" header from the request. It should be in the format "Bearer <token>".
         const authHeader = req.headers.authorization;
@@ -96,8 +125,9 @@ function optionalAuth(req, res, next) {
  * @param {object} res - The Express response object.
  * @param {function} next - The next middleware function in the stack.
  * @returns {void}
- */
-function requireOwnership(req, res, next) {
+*/
+ 
+/*function requireOwnership(req, res, next) {
     // Get the user ID from the authenticated token (provided by `authenticateToken`).
     const userId = req.userId;
 
@@ -113,7 +143,7 @@ function requireOwnership(req, res, next) {
 
     // If the IDs match, the ownership check passes. Proceed to the next middleware.
     next();
-}
+*/
 
 /**
  * Middleware to restrict access to a route to only admin users.
@@ -124,7 +154,7 @@ function requireOwnership(req, res, next) {
  * @param {function} next - The next middleware function in the stack.
  * @returns {void}
  */
-function requireAdmin(req, res, next) {
+/*function requireAdmin(req, res, next) {
     // Check for a specific `isAdmin` flag on the user payload from the decoded token.
     // This assumes the `isAdmin` flag is included in the JWT payload when it's created.
     if (!req.user.isAdmin) {
@@ -136,3 +166,4 @@ function requireAdmin(req, res, next) {
 }
 
 export { authenticateToken, optionalAuth, requireOwnership, requireAdmin }
+*/
